@@ -11,9 +11,22 @@ import mlflow.sklearn
 # ----------------------
 # LOAD DATA
 # ----------------------
+import requests
+from io import BytesIO
+
 @task
 def load_data():
-    df = pd.read_excel("data/raw/online_retail.xlsx")
+
+    print("🌐 Descargando datos desde URL (simulando API)...")
+
+    url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx"
+
+    response = requests.get(url)
+
+    df = pd.read_excel(BytesIO(response.content))
+
+    print("Datos cargados:", df.shape)
+
     return df
 
 # ----------------------
