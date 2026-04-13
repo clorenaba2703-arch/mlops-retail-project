@@ -1,12 +1,24 @@
-# Prefect pipeline for retail ML project
 from prefect import flow, task
 import pandas as pd
 
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+
+import mlflow
+import mlflow.sklearn
+
+# ----------------------
+# LOAD DATA
+# ----------------------
 @task
 def load_data():
     df = pd.read_excel("data/raw/online_retail.xlsx")
     return df
 
+# ----------------------
+# PREPROCESS
+# ----------------------
 @task
 def preprocess_data(df):
 
@@ -22,23 +34,18 @@ def preprocess_data(df):
 
     return df
 
-@flow
-def retail_pipeline():
-
-    df = load_data()
-    df_clean = preprocess_data(df)
-
-    print("Datos finales:", df_clean.shape)
-
-if __name__ == "__main__":
-    retail_pipeline()
-    @task
+# ----------------------
+# TRAIN MODEL
+# ----------------------
+@task
 def train_model(df):
 
-    X = df.drop("TotalPrice", axis=1)
+    X = df[["Quantity", "UnitPrice", "Year", "Month"]]
     y = df["TotalPrice"]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+
+    mlflow.set_experiment("Retail Project")  # 👈 aquí va esto
 
     with mlflow.start_run():
 
@@ -56,3 +63,18 @@ def train_model(df):
     print("MAE:", mae)
 
     return model
+
+# ----------------------
+# FLOW
+# ----------------------
+@flow
+def retail_pipeline():
+
+    df = load_data()
+    df_clean = preprocess_data(df)
+    model = train_model(df_clean)
+
+    print("Pipeline completo ejecutado")
+
+if __name__ == "__main__":
+    retail_pipeline()
