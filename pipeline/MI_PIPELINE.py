@@ -1,5 +1,7 @@
 from prefect import flow, task
 import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import GradientBoostingRegressor
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
@@ -58,25 +60,53 @@ def train_model(df):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-    mlflow.set_experiment("Retail Project")  # 👈 aquí va esto
+    mlflow.set_experiment("Retail Project")
 
     with mlflow.start_run():
 
-        model = RandomForestRegressor(n_estimators=50, random_state=42)
-        model.fit(X_train, y_train)
+        # 🔵 Random Forest
+        rf_model = RandomForestRegressor(n_estimators=50, random_state=42)
+        rf_model.fit(X_train, y_train)
+        rf_preds = rf_model.predict(X_test)
+        rf_mae = mean_absolute_error(y_test, rf_preds)
 
-        preds = model.predict(X_test)
-        mae = mean_absolute_error(y_test, preds)
+        # 🟢 Linear Regression
+        lr_model = LinearRegression()
+        lr_model.fit(X_train, y_train)
+        lr_preds = lr_model.predict(X_test)
+        lr_mae = mean_absolute_error(y_test, lr_preds)
 
-        mlflow.log_param("model", "RandomForest")
-        mlflow.log_metric("mae", mae)
+        # 🟣 Gradient Boosting
+        gb_model = GradientBoostingRegressor()
+        gb_model.fit(X_train, y_train)
+        gb_preds = gb_model.predict(X_test)
+        gb_mae = mean_absolute_error(y_test, gb_preds)
 
-        mlflow.sklearn.log_model(model, "model")
+        # 🔥 IMPRIMIR RESULTADOS
+        print("Random Forest MAE:", rf_mae)
+        print("Linear Regression MAE:", lr_mae)
+        print("Gradient Boosting MAE:", gb_mae)
 
-    print("MAE:", mae)
+        # 🏆 SELECCIÓN DEL MEJOR MODELO
+        models = {
+            "RandomForest": (rf_model, rf_mae),
+            "LinearRegression": (lr_model, lr_mae),
+            "GradientBoosting": (gb_model, gb_mae)
+        }
 
-    return model
+        best_model_name = min(models, key=lambda x: models[x][1])
+        best_model, best_mae = models[best_model_name]
 
+        # REGISTRO EN MLFLOW
+        mlflow.log_param("best_model", best_model_name)
+        mlflow.log_metric("mae", best_mae)
+
+        mlflow.sklearn.log_model(best_model, "model")
+
+    print(" Mejor modelo:", best_model_name)
+    print("MAE:", best_mae)
+
+    return best_model
 # ----------------------
 # FLOW
 # ----------------------
