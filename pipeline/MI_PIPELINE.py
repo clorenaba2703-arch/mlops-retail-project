@@ -19,7 +19,7 @@ from io import BytesIO
 @task
 def load_data():
 
-    print("🌐 Descargando datos desde URL (simulando API)...")
+    print("Descargando datos desde URL (simulando API)...")
 
     url = "https://archive.ics.uci.edu/ml/machine-learning-databases/00352/Online%20Retail.xlsx"
 
@@ -47,7 +47,25 @@ def preprocess_data(df):
     df["Year"] = df["InvoiceDate"].dt.year
     df["Month"] = df["InvoiceDate"].dt.month
 
+    # GUARDAR DATA LIMPIA
+    df.to_csv("data_processed.csv", index=False)
+
     return df
+
+# ----------------------
+# SELECT BEST MODEL
+# ----------------------
+@task
+def select_best_model(models):
+
+    best_model_name = min(models, key=lambda x: models[x][1])
+    best_model, best_mae = models[best_model_name]
+
+    print(" Mejor modelo:", best_model_name)
+    print("MAE:", best_mae)
+
+    return best_model, best_model_name, best_mae
+
 
 # ----------------------
 # TRAIN MODEL
@@ -58,55 +76,56 @@ def train_model(df):
     X = df[["Quantity", "UnitPrice", "Year", "Month"]]
     y = df["TotalPrice"]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
     mlflow.set_experiment("Retail Project")
 
     with mlflow.start_run():
+        mlflow.log_artifact("data_processed.csv")
 
-        # 🔵 Random Forest
+        # Random Forest
         rf_model = RandomForestRegressor(n_estimators=50, random_state=42)
         rf_model.fit(X_train, y_train)
         rf_preds = rf_model.predict(X_test)
         rf_mae = mean_absolute_error(y_test, rf_preds)
 
-        # 🟢 Linear Regression
+        # Linear Regression
         lr_model = LinearRegression()
         lr_model.fit(X_train, y_train)
         lr_preds = lr_model.predict(X_test)
         lr_mae = mean_absolute_error(y_test, lr_preds)
 
-        # 🟣 Gradient Boosting
+        # Gradient Boosting
         gb_model = GradientBoostingRegressor()
         gb_model.fit(X_train, y_train)
         gb_preds = gb_model.predict(X_test)
         gb_mae = mean_absolute_error(y_test, gb_preds)
 
-        # 🔥 IMPRIMIR RESULTADOS
+        # Imprimir resultados
         print("Random Forest MAE:", rf_mae)
         print("Linear Regression MAE:", lr_mae)
         print("Gradient Boosting MAE:", gb_mae)
 
-        # 🏆 SELECCIÓN DEL MEJOR MODELO
+        # Diccionario de modelos
         models = {
             "RandomForest": (rf_model, rf_mae),
             "LinearRegression": (lr_model, lr_mae),
             "GradientBoosting": (gb_model, gb_mae)
         }
 
-        best_model_name = min(models, key=lambda x: models[x][1])
-        best_model, best_mae = models[best_model_name]
+        # Selección del mejor modelo (nueva tarea)
+        best_model, best_model_name, best_mae = select_best_model(models)
 
-        # REGISTRO EN MLFLOW
+        # Registro en MLflow
         mlflow.log_param("best_model", best_model_name)
         mlflow.log_metric("mae", best_mae)
 
         mlflow.sklearn.log_model(best_model, "model")
 
-    print(" Mejor modelo:", best_model_name)
-    print("MAE:", best_mae)
-
     return best_model
+
 # ----------------------
 # FLOW
 # ----------------------
