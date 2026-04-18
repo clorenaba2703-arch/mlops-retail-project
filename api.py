@@ -1,26 +1,44 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel, Field
 import pandas as pd
 import mlflow.sklearn
 
+# 🔹 1. CREAR APP PRIMERO
 app = FastAPI()
 
-#  CARGAR MODELO DESDE MLFLOW
-model = mlflow.sklearn.load_model(
-    "runs:/07285efcb2464af18bbb6f1f8388c148/model"
-)
+# 🔹 2. CARGAR MODELO
+import joblib
 
+model = joblib.load("model.pkl")
+FEATURES = list(model.feature_names_in_)
+
+# 🔹 4. VALIDACIÓN
+class InputData(BaseModel):
+    Quantity: int = Field(gt=0)
+    UnitPrice: float = Field(gt=0)
+    Month: int = Field(ge=1, le=12)
+    Year: int = Field(ge=2010, le=2025)
+
+# 🔹 5. ENDPOINTS
 @app.get("/")
 def home():
     return {"message": "API de modelo retail activa 🚀"}
 
 @app.post("/predict")
-def predict(data: dict):
+def predict(data: InputData):
 
-    df = pd.DataFrame([data])
+    try:
+        df = pd.DataFrame([data.model_dump()])
 
-    prediction = model.predict(df)[0]
+        df = df.loc[:, FEATURES]
 
-    return {
-        "prediction": round(prediction, 2),
-       "description": "Valor total estimado de la transacción en libras esterlinas (GBP)"
-    }
+        prediction = model.predict(df)[0]
+
+        return {
+            "prediction": round(float(prediction), 2),
+            "currency": "GBP",
+            "status": "success"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
