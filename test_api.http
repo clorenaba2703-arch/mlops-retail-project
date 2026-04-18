@@ -1,0 +1,18 @@
+GET http://127.0.0.1:8000
+###
+
+POST http://127.0.0.1:8000/predict
+Content-Type: application/json
+
+{
+  "Quantity": 10,
+  "UnitPrice": 2.5,
+  "Month": 12,
+  "Year": 2011
+}
+#“Se implementó un servicio de inferencia utilizando
+ FastAPI, integrando el modelo versionado en MLflow. 
+ Se aseguraron validaciones de entrada con Pydantic 
+ y consistencia en las variables de entrada mediante 
+ feature_names_in_, evitando errores entre entrenamiento
+  y despliegue.”

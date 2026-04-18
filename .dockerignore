@@ -4,3 +4,4 @@ __pycache__/
 mlruns/
 mlflow.db
 data_processed.csv
+test_api.http
