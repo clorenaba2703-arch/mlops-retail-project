@@ -18,6 +18,9 @@ def predict(data: dict):
 
     df = pd.DataFrame([data])
 
-    prediction = model.predict(df)
+    prediction = model.predict(df)[0]
 
-    return {"prediction": prediction.tolist()}
+    return {
+        "prediction": round(prediction, 2),
+       "description": "Valor total estimado de la transacción en libras esterlinas (GBP)"
+    }
