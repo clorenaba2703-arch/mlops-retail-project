@@ -1,34 +1,44 @@
-# 🧠 MLOps Retail Project - EDA
+# 🛍️ MLOps Retail Project
 
 ## 📊 Descripción
 
-Este proyecto presenta un Análisis Exploratorio de Datos (EDA) sobre el dataset **Online Retail**, con el objetivo de comprender patrones de ventas, comportamiento de clientes y características de los productos.
+Este proyecto implementa un flujo completo de Machine Learning aplicado a datos de ventas retail, incluyendo:
+
+* Análisis Exploratorio de Datos (EDA)
+* Limpieza y transformación de datos
+* Ingeniería de características
+* Entrenamiento de modelo
+* Tracking con MLflow
+* API de inferencia con FastAPI
+* Pipeline automatizado con Prefect
+
+El objetivo es predecir el **valor total de una transacción (TotalPrice)** a partir de variables clave del negocio.
 
 ---
 
 ## 🎯 Objetivo
 
-Explorar y analizar los datos para identificar:
+Desarrollar un sistema de Machine Learning capaz de:
 
-- Tendencias de ventas
-- Productos más vendidos
-- Clientes más valiosos
-- Distribución de precios
-- Comportamiento geográfico
+* Analizar patrones de ventas
+* Identificar productos y clientes clave
+* Modelar el comportamiento del negocio
+* Exponer el modelo mediante una API lista para producción
 
 ---
 
 ## 📁 Dataset
 
-El dataset utilizado corresponde a transacciones de una tienda online, incluyendo información sobre:
+El dataset corresponde a transacciones de una tienda online e incluye:
 
-- Facturas (`InvoiceNo`)
-- Productos (`StockCode`, `Description`)
-- Cantidad (`Quantity`)
-- Precio (`UnitPrice`)
-- Clientes (`CustomerID`)
-- País (`Country`)
-- Fecha (`InvoiceDate`)
+* `InvoiceNo`: número de factura
+* `StockCode`: código del producto
+* `Description`: descripción del producto
+* `Quantity`: cantidad
+* `UnitPrice`: precio unitario
+* `CustomerID`: identificador del cliente
+* `Country`: país
+* `InvoiceDate`: fecha de transacción
 
 ---
 
@@ -36,78 +46,164 @@ El dataset utilizado corresponde a transacciones de una tienda online, incluyend
 
 Se realizaron las siguientes transformaciones:
 
-- Eliminación de valores nulos en `CustomerID`
-- Eliminación de cancelaciones (facturas con "C")
-- Eliminación de valores negativos en `Quantity` y `UnitPrice`
+* Eliminación de valores nulos en `CustomerID`
+* Eliminación de cancelaciones (facturas con "C")
+* Eliminación de valores negativos en `Quantity` y `UnitPrice`
 
-El dataset se redujo de **541,909 a 397,884 registros**.
-
----
-
-## ⚙️ Feature Engineering
-
-Se crearon nuevas variables:
-
-- `TotalPrice`: valor total por transacción
-- `Year`, `Month`, `Day`: variables temporales
+📉 El dataset se redujo de **541,909 → 397,884 registros**
 
 ---
 
-## 📈 Análisis realizado
+## ⚙️ Ingeniería de características
 
-Se desarrollaron visualizaciones para:
+Se crearon variables clave para el modelo:
 
-- Ventas por mes
-- Productos más vendidos
-- Ventas por país
-- Clientes más valiosos
-- Distribución de precios (con y sin outliers)
+* `TotalPrice = Quantity * UnitPrice`
+* `Year`, `Month`, `Day` (variables temporales)
 
 ---
 
-## 💡 Principales insights
+## 📈 Análisis Exploratorio (EDA)
 
-- Existe un comportamiento estacional en las ventas, con picos en los últimos meses del año.
-- Un pequeño grupo de productos concentra la mayor parte de las ventas.
-- El Reino Unido domina ampliamente las ventas.
-- Un grupo reducido de clientes genera la mayor parte de los ingresos (principio de Pareto).
-- La mayoría de los productos tienen precios bajos, con presencia de outliers en precios altos.
+Se realizaron visualizaciones para:
+
+* Ventas por mes
+* Productos más vendidos
+* Ventas por país
+* Clientes más valiosos
+* Distribución de precios (con y sin outliers)
+* Relación entre precio, cantidad e ingresos
+
+---
+
+## 💡 Insights de negocio
+
+* Existe estacionalidad en ventas (picos en fin de año)
+* Un subconjunto de productos genera la mayor parte del ingreso (Pareto)
+* Reino Unido concentra la mayoría de ventas
+* El ingreso está impulsado por **volumen (Quantity)** más que por precio
+* Productos de bajo precio y alta rotación dominan el negocio
+
+---
+
+## 🧠 Modelo
+
+Se entrenó un modelo de **Random Forest Regressor** para predecir:
+
+👉 `TotalPrice`
+
+### Variables utilizadas:
+
+* Quantity
+* UnitPrice
+* Year
+* Month
+
+El modelo fue registrado usando **MLflow**.
+
+---
+
+## 🚀 API de inferencia
+
+Se implementó una API con FastAPI para exponer el modelo.
+
+### Endpoint
+
+```http
+POST /predict
+```
+
+### Ejemplo de request
+
+```json
+{
+  "Quantity": 10,
+  "UnitPrice": 2.5,
+  "Month": 12,
+  "Year": 2011
+}
+```
+
+### Ejemplo de respuesta
+
+```json
+{
+  "prediction": 24.93,
+  "currency": "GBP",
+  "status": "success"
+}
+```
+
+### Características
+
+* Validación de datos con Pydantic
+* Control de errores
+* Consistencia de features usando `feature_names_in_`
+
+---
+
+## 🔄 Pipeline (Prefect)
+
+Se implementó un pipeline que automatiza:
+
+* Carga de datos
+* Entrenamiento del modelo
+* Registro en MLflow
 
 ---
 
 ## 🛠️ Tecnologías utilizadas
 
-- Python
-- Pandas
-- NumPy
-- Matplotlib
-- Seaborn
+* Python
+* Pandas / NumPy
+* Matplotlib / Seaborn
+* Scikit-learn
+* MLflow
+* FastAPI
+* Prefect
 
 ---
 
-## ▶️ Ejecución del proyecto
+## ▶️ Ejecución
+
+### 1. Crear entorno
 
 ```bash
-uv venv
+python -m venv .venv
+```
+
+### 2. Activar entorno
+
+```bash
 .venv\Scripts\activate
-uv pip install -r requirements.txt
-jupyter notebook
+```
 
-AUTORES
-
----
-
-# 🟢 PASO 2: Guardar archivo
-
-👉 `Ctrl + S`
-
----
-
-# 🟢 PASO 3: Subir a GitHub (MUY IMPORTANTE)
-
-En la terminal:
+### 3. Instalar dependencias
 
 ```bash
-git init
-git add .
-git commit -m "feat: complete EDA with data cleaning, visualization and insights"
+pip install -r requirements.txt
+```
+
+### 4. Ejecutar API
+
+```bash
+uvicorn api:app --reload
+```
+
+### 5. Documentación
+
+```bash
+http://127.0.0.1:8000/docs
+```
+
+---
+
+## 📌 Conclusión
+
+Este proyecto demuestra la implementación de un flujo completo de MLOps, asegurando la transición desde el análisis exploratorio hasta el despliegue de un modelo en producción, garantizando consistencia entre entrenamiento y predicción.
+
+---
+
+## 👤 Autor
+
+Clorena
